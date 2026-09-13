@@ -92,5 +92,5 @@ def compute_subscores(sentence, vocab, repetition, specificity, readability,
 def compute_overall_score(subscores: dict) -> dict:
     overall = sum(subscores[k] * w for k, w in SCORE_WEIGHTS.items())
     overall = round(overall, 1)
-    label = next((lbl for lo, hi, lbl in SCORE_BANDS if lo <= overall <= hi), "Unscored")
+    label = next((lbl for lo, hi, lbl in SCORE_BANDS if lo <= overall < hi + 1), "Unscored")
     return {"overall_score": overall, "interpretation": label}

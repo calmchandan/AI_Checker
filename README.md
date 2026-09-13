@@ -17,8 +17,12 @@ cd academic_writer
 python3 -m venv venv
 source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-python -m spacy download en_core_web_sm
 ```
+
+No spaCy model download step — this version has no spaCy/C-extension
+dependency at all (see "Why no spaCy" below), so install is just the one
+`pip install` command, and it deploys reliably on hosted platforms like
+Streamlit Community Cloud regardless of what Python version they run.
 
 ## Run the dashboard
 
@@ -55,6 +59,20 @@ academic_writer/
 ├── file_io.py                                  # Upload parsing (docx/pdf/txt) + export (json/txt/csv)
 └── requirements.txt
 ```
+
+## Why no spaCy
+
+Earlier versions used spaCy for sentence parsing, passive-voice detection,
+and entity recognition. spaCy's dependency `blis` has no prebuilt wheel on
+several current Python versions and fails to build from source when it
+falls back to compiling — which is exactly what broke deployment on
+Streamlit Community Cloud once their base image moved to a newer Python.
+Since hosted platforms can bump their Python version without notice, this
+version replaces spaCy entirely with regex/word-list heuristics for the
+same three features (see `sentence_analysis.py`, `style_rules.py`,
+`specificity.py` docstrings for the exact trade-offs — they're slightly
+less precise than a true parse, but dependency-free and won't break again
+on a platform Python bump).
 
 ## Key metrics & thresholds
 

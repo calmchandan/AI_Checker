@@ -34,7 +34,7 @@ READ THIS BEFORE USING THIS MODULE'S OUTPUT FOR ANY DECISION:
 """
 
 import statistics
-from text_utils import get_nlp, words, normalize_tokens
+from text_utils import words, normalize_tokens
 
 try:
     from wordfreq import zipf_frequency

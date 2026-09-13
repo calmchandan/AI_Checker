@@ -1,28 +1,58 @@
 """
 text_utils.py
-Shared helpers: sentence/paragraph splitting, tokenization, and the single
-spaCy pipeline instance used across modules (loaded once, lazily).
+Shared helpers: sentence/paragraph splitting and tokenization.
+
+No spaCy dependency (intentionally). spaCy's `blis` dependency has no
+prebuilt wheel on several current Python versions and fails to build from
+source on hosted platforms like Streamlit Cloud, which pin whatever Python
+version their base image ships. Everything here is pure-Python regex/rule
+based so the app deploys reliably regardless of the host's Python version.
 """
 
 import re
 import regex
-from functools import lru_cache
 
 _WORD_RE = regex.compile(r"[A-Za-z']+")
 
+# Common abbreviations that should NOT be treated as sentence boundaries.
+_ABBREVIATIONS = {
+    "mr", "mrs", "ms", "dr", "prof", "sr", "jr", "st", "vs", "etc",
+    "eg", "ie", "us", "uk", "inc", "ltd", "co", "fig", "no", "vol",
+    "approx", "govt", "dept", "univ", "assn", "rs",
+}
 
-@lru_cache(maxsize=1)
-def get_nlp():
-    """Load the spaCy pipeline once and reuse it everywhere."""
-    import spacy
-    try:
-        nlp = spacy.load("en_core_web_sm")
-    except OSError as e:
-        raise RuntimeError(
-            "spaCy model 'en_core_web_sm' is not installed. Run:\n"
-            "  python -m spacy download en_core_web_sm"
-        ) from e
-    return nlp
+_SENTENCE_BOUNDARY = re.compile(r'(?<=[.!?])["\')\]]?\s+(?=[A-Z"\'(])')
+
+
+def split_sentences(text: str) -> list[str]:
+    """
+    Rule-based sentence splitter: splits on ./!/? followed by whitespace and
+    a capital letter (or quote/paren), then merges back splits that were
+    actually just an abbreviation followed by a capitalized word.
+    """
+    text = text.strip()
+    if not text:
+        return []
+
+    raw_chunks = _SENTENCE_BOUNDARY.split(text)
+    sentences = []
+    buffer = ""
+
+    for chunk in raw_chunks:
+        buffer = f"{buffer} {chunk}".strip() if buffer else chunk
+        trailing_word = re.findall(r"([A-Za-z]+)\.\s*$", buffer)
+        if trailing_word and trailing_word[-1].lower() in _ABBREVIATIONS:
+            continue  # don't finalize yet -- likely a false split
+        # also avoid splitting on a single capital-letter initial, e.g. "J. Smith"
+        if re.search(r"\b[A-Z]\.\s*$", buffer):
+            continue
+        sentences.append(buffer.strip())
+        buffer = ""
+
+    if buffer:
+        sentences.append(buffer.strip())
+
+    return [s for s in sentences if s]
 
 
 def split_paragraphs(text: str) -> list[str]:

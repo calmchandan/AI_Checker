@@ -10,7 +10,7 @@ detectors, or other academic-integrity systems.
 """
 
 import datetime
-from text_utils import word_count, split_paragraphs, get_nlp
+from text_utils import word_count, split_paragraphs
 from sentence_analysis import analyze_sentences
 from vocabulary import analyze_vocabulary
 from repetition import analyze_repetition
