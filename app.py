@@ -3,10 +3,10 @@ app.py
 Streamlit dashboard for the Academic Writing Analyzer & Natural Writing
 Optimizer. Run with:  streamlit run app.py
 """
-
+import subprocess, sys 
+subprocess.run([sys.executable, "-m", "spacy", "download", "en_core_web_sm"])
 import streamlit as st
 import pandas as pd
-
 from analyzer import run_analysis
 from file_io import load_text_from_upload, export_json, export_txt, export_csv
 from revision import mechanical_clean_pass
